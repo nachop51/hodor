@@ -2,18 +2,21 @@
 import requests
 from bs4 import BeautifulSoup
 from lxml.html import fromstring
-from fp.fp import FreeProxy
+import proxyscrape
 
 url_hodor = "http://158.69.76.135/level4.php"
 proxies_used = []
+collector = proxyscrape.create_collector('my-collector', 'http')
 
 
 def current_session():
-    global proxies_used
-    proxy = FreeProxy().get()
+    global proxies_used, collector
+    proxy = collector.get_proxy()
+    proxy = f"{proxy.type}://{proxy.host}:{proxy.port}"
     if proxy in proxies_used:
         while proxy in proxies_used:
-            proxy = FreeProxy().get()
+            proxy = collector.get_proxy()
+            proxy = f"{proxy.type}://{proxy.host}:{proxy.port}"
             print("I'm here")
     print(f"Proxy: {proxy}")
     try:
