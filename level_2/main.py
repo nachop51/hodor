@@ -23,7 +23,7 @@ def current_session(session):
 
 
 with requests.session() as session:
-    for i in range(1022):
+    for i in range(1024):
         data = current_session(session)
         res = session.post(
             url=url_hodor,
