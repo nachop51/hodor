@@ -2,34 +2,19 @@
 import requests
 from bs4 import BeautifulSoup
 from lxml.html import fromstring
-from random import choice
+from fp.fp import FreeProxy
 
 url_hodor = "http://158.69.76.135/level4.php"
-proxy_list = None
-
-
-def get_proxies():
-    url = 'https://free-proxy-list.net/'
-    response = requests.get(url)
-    parser = fromstring(response.text)
-    proxies = set()
-    for i in parser.xpath('//tbody/tr')[:100]:
-        if i.xpath('.//td[7][contains(text(),"yes")]'):
-            proxy = ":".join([i.xpath('.//td[1]/text()')[0],
-                             i.xpath('.//td[2]/text()')[0]])
-            proxies.add(proxy)
-    return proxies
+proxies_used = []
 
 
 def current_session():
-    global proxy_list
-    try:
-        proxy = choice(list(proxy_list))
-        proxy_list.discard(proxy)
-    except Exception:
-        proxy_list = get_proxies()
-        proxy = choice(list(proxy_list))
-        proxy_list.discard(proxy)
+    global proxies_used
+    proxy = FreeProxy().get()
+    if proxy in proxies_used:
+        while proxy in proxies_used:
+            proxy = FreeProxy().get()
+            print("I'm here")
     print(f"Proxy: {proxy}")
     try:
         session = requests.Session()
@@ -37,8 +22,8 @@ def current_session():
         soup = BeautifulSoup(current.text, "html.parser")
         result = soup.find_all('input', {'type': 'hidden'})
         session_proxies = {
-            'http': 'http://' + proxy,
-            'https': 'http://' + proxy,
+            'http': proxy,
+            'https': proxy,
         }
         data = {
             "session": {
@@ -56,22 +41,22 @@ def current_session():
             data=data["session"],
             headers=data["headers"],
             proxies=session_proxies,
-            timeout=10,
+            timeout=5,
         )
-        print(res.text)
         if len(res.text) > 100:
             voted = True
         else:
+            print(res.text)
+            proxies_used.append(proxy)
             print("Timed out")
             voted = False
-        print(res.txt)
     except Exception:
         print("Connection error, skipping.")
+        proxies_used.append(proxy)
         voted = False
     return voted
 
 
-get_proxies()
 success = 0
 total = 0
 while success < 81:
