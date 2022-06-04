@@ -25,11 +25,12 @@ def current_session():
     global proxy_list
     try:
         proxy = choice(list(proxy_list))
-        proxy_list.remove(proxy)
+        proxy_list.discard(proxy)
     except Exception:
         proxy_list = get_proxies()
         proxy = choice(list(proxy_list))
-        proxy_list.remove(proxy)
+        proxy_list.discard(proxy)
+    print(f"Proxy: {proxy}")
     try:
         session = requests.Session()
         current = session.get(url_hodor)
@@ -55,14 +56,17 @@ def current_session():
             data=data["session"],
             headers=data["headers"],
             proxies=session_proxies,
-            timeout=6
+            timeout=10,
         )
+        print(res.text)
         if len(res.text) > 100:
             voted = True
         else:
+            print("Timed out")
             voted = False
         print(res.txt)
     except Exception:
+        print("Connection error, skipping.")
         voted = False
     return voted
 
