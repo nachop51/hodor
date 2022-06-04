@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import requests
 from bs4 import BeautifulSoup
-from captcha_solver import CaptchaSolver
+import pytesseract
+import cv2
 
 url_hodor = "http://158.69.76.135/level3.php"
 
@@ -10,9 +11,9 @@ def captcha_solver(session):
     captcha = session.get('http://158.69.76.135/captcha.php')
     with open('captcha.png', 'wb') as f:
         f.write(captcha.content)
-    solver = CaptchaSolver('browser')
-    raw_data = open('captcha.png', 'rb').read()
-    return solver.solve_captcha(raw_data)
+    img = cv2.imread('captcha.png')
+    # print(pytesseract.image_to_string(img).split('\n')[0], end=".")
+    return pytesseract.image_to_string(img).split('\n')[0]
 
 
 def current_session(session):
@@ -33,16 +34,21 @@ def current_session(session):
     }
 
 
+solved = 0
+total = 0
 with requests.session() as session:
-    for i in range(2):
+    while solved < 1024:
         data = current_session(session)
         res = session.post(
             url=url_hodor,
             data=data["session"],
             headers=data["headers"],
         )
-        print(res.text)
-        if res.status_code == 200:
-            print(f"Vote count:{i + 1}")
-
-captcha_link = "http://158.69.76.135/captcha.php"
+        # print(res.text)
+        if 'See you later' in res.text:
+            print("Captcha failed")
+        else:
+            solved += 1
+            print(f"Vote count: {solved}")
+        total += 1
+        print(f"Summary: {solved}/{total}")
