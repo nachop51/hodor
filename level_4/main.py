@@ -2,22 +2,21 @@
 import requests
 from bs4 import BeautifulSoup
 from lxml.html import fromstring
-import proxyscrape
+from Proxy_List_Scrapper import Scrapper
+from random import choice
 
 url_hodor = "http://158.69.76.135/level4.php"
-proxies_used = []
-collector = proxyscrape.create_collector('my-collector', 'http')
+
+
+def get_proxies():
+    scrapper = Scrapper(category="ALL", print_err_trace=False)
+    data = scrapper.getProxies()
+    return [f'{item.ip}:{item.port}' for item in data.proxies]
 
 
 def current_session():
-    global proxies_used, collector
-    proxy = collector.get_proxy()
-    proxy = f"{proxy.type}://{proxy.host}:{proxy.port}"
-    if proxy in proxies_used:
-        while proxy in proxies_used:
-            proxy = collector.get_proxy()
-            proxy = f"{proxy.type}://{proxy.host}:{proxy.port}"
-            print("I'm here")
+    global proxies
+    proxy = proxies.pop()
     print(f"Proxy: {proxy}")
     try:
         session = requests.Session()
@@ -25,8 +24,8 @@ def current_session():
         soup = BeautifulSoup(current.text, "html.parser")
         result = soup.find_all('input', {'type': 'hidden'})
         session_proxies = {
-            'http': proxy,
-            'https': proxy,
+            'http': 'http://' + proxy,
+            'https': 'https://' + proxy,
         }
         data = {
             "session": {
@@ -47,22 +46,22 @@ def current_session():
             timeout=5,
         )
         if len(res.text) > 100:
+            print("Voted!")
             voted = True
         else:
             print(res.text)
-            proxies_used.append(proxy)
             print("Timed out")
             voted = False
     except Exception:
         print("Connection error, skipping.")
-        proxies_used.append(proxy)
         voted = False
     return voted
 
 
+proxies = get_proxies()
 success = 0
 total = 0
-while success < 81:
+while success < 98 and len(proxies) > 0:
     voted = current_session()
     if not voted:
         print("Failed")
